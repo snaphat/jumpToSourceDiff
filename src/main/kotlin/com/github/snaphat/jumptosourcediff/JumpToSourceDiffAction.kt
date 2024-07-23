@@ -94,13 +94,13 @@ class JumpToSourceDiffAction : AbstractShowDiffAction()
     private fun getDiffEditor(manager: FileEditorManagerEx): FileEditorWithTextEditors? =
         manager.currentFile?.let { file ->
             manager.currentWindow                                      // Search in the current window's composites
-                ?.getComposites()?.flatMap { it.allEditors.asSequence() }
+                ?.allComposites?.flatMap { it.allEditors.asSequence() }
                 ?.filterIsInstance<FileEditorWithTextEditors>()
-                ?.firstOrNull { it.getFilesToRefresh().firstOrNull() == file }
+                ?.firstOrNull { it.filesToRefresh.firstOrNull() == file }
             ?: manager.allEditors                                      // Fallback to search in all editors managed by FileEditorManagerEx
                 .asSequence()
                 .filterIsInstance<FileEditorWithTextEditors>()
-                .firstOrNull { it.getFilesToRefresh().firstOrNull() == file }
+                .firstOrNull { it.filesToRefresh.firstOrNull() == file }
         }
 
     /**
