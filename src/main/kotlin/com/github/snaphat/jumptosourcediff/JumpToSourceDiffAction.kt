@@ -21,6 +21,10 @@ import com.intellij.openapi.vfs.VirtualFile
  */
 class JumpToSourceDiffAction : AbstractShowDiffAction()
 {
+    // Inherit to avoid @org.jetbrains.annotations.ApiStatus.OverrideOnly warnings when calling the OpenInEditorAction.update method
+    private val openInEditorAction = object : OpenInEditorAction()
+    {}
+
     /**
      * Handles the action performed event.
      *
@@ -41,7 +45,7 @@ class JumpToSourceDiffAction : AbstractShowDiffAction()
         {
             EditorKind.MAIN_EDITOR -> getDiffEditor(manager)?.let { focusDiffEditor(manager, it, line) } // For main editor types, try to switch to a diff editor if available
                                       ?: super.actionPerformed(e)                                        // If no diff editor is open, behave like CompareWithTheSameVersionAction
-            EditorKind.DIFF        -> OpenInEditorAction().actionPerformed(e)                            // For diff editor types, behave as OpenInEditorAction would
+            EditorKind.DIFF        -> openInEditorAction.actionPerformed(e)                              // For diff editor types, behave as OpenInEditorAction would
             else                   -> super.actionPerformed(e)                                           // For all other editor types, behave as CompareWithTheSameVersionAction would
         }
     }
@@ -76,9 +80,9 @@ class JumpToSourceDiffAction : AbstractShowDiffAction()
         val editorKind = e.getData(CommonDataKeys.EDITOR)?.editorKind ?: return // Get the type of editor
         when (editorKind)
         {
-            EditorKind.MAIN_EDITOR -> super.update(e)                // For main editor types, behave as CompareWithTheSameVersionAction would
-            EditorKind.DIFF        -> OpenInEditorAction().update(e) // For diff editor types, behave as OpenInEditorAction would
-            else                   -> super.update(e)                // For all other editor types, behave as CompareWithTheSameVersionAction would
+            EditorKind.MAIN_EDITOR -> super.update(e)              // For main editor types, behave as CompareWithTheSameVersionAction would
+            EditorKind.DIFF        -> openInEditorAction.update(e) // For diff editor types, behave as OpenInEditorAction would
+            else                   -> super.update(e)              // For all other editor types, behave as CompareWithTheSameVersionAction would
         }
     }
 
