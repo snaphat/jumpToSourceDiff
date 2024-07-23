@@ -1,12 +1,11 @@
 package com.github.snaphat.jumptosourcediff
 
 import com.intellij.diff.actions.impl.OpenInEditorAction
+import com.intellij.diff.util.DiffUtil
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorKind
-import com.intellij.openapi.editor.LogicalPosition
-import com.intellij.openapi.editor.ScrollType
 import com.intellij.openapi.fileEditor.FileEditorWithTextEditors
 import com.intellij.openapi.fileEditor.ex.FileEditorManagerEx
 import com.intellij.openapi.project.Project
@@ -37,16 +36,16 @@ class JumpToSourceDiffAction : AbstractShowDiffAction()
      */
     override fun actionPerformed(e: AnActionEvent)
     {
-        val manager    = e.project?.let { FileEditorManagerEx.getInstanceEx(it) } ?: return           // Get the file editor manager for the current project
-        val line       = e.getData(CommonDataKeys.CARET)?.caretModel?.logicalPosition?.line ?: return // Get the current line in the editor
-        val editorKind = e.getData(CommonDataKeys.EDITOR)?.editorKind ?: return                       // Get the type of editor
+        val editorManager = e.project?.let { FileEditorManagerEx.getInstanceEx(it) } ?: return           // Get the file editor manager for the current project
+        val line          = e.getData(CommonDataKeys.CARET)?.caretModel?.logicalPosition?.line ?: return // Get the current line in the editor
+        val editorKind    = e.getData(CommonDataKeys.EDITOR)?.editorKind ?: return                       // Get the type of editor
 
         when (editorKind)
         {
-            EditorKind.MAIN_EDITOR -> getDiffEditor(manager)?.let { focusDiffEditor(manager, it, line) } // For main editor types, try to switch to a diff editor if available
-                                      ?: super.actionPerformed(e)                                        // If no diff editor is open, behave like CompareWithTheSameVersionAction
-            EditorKind.DIFF        -> openInEditorAction.actionPerformed(e)                              // For diff editor types, behave as OpenInEditorAction would
-            else                   -> super.actionPerformed(e)                                           // For all other editor types, behave as CompareWithTheSameVersionAction would
+            EditorKind.MAIN_EDITOR -> getDiffEditor(editorManager)?.let { focusDiffEditor(editorManager, it, line) } // For main editor types, try to switch to a diff editor if available
+                                      ?: super.actionPerformed(e)                                                    // If no diff editor is open, behave like CompareWithTheSameVersionAction
+            EditorKind.DIFF        -> openInEditorAction.actionPerformed(e)                                          // For diff editor types, behave as OpenInEditorAction would
+            else                   -> super.actionPerformed(e)                                                       // For all other editor types, behave as CompareWithTheSameVersionAction would
         }
     }
 
@@ -92,35 +91,32 @@ class JumpToSourceDiffAction : AbstractShowDiffAction()
      * This function searches within the currently active editor window first. If no matching editor is found,
      * it then searches through all editors managed by the FileEditorManagerEx.
      *
-     * @param manager The FileEditorManagerEx instance used to retrieve editors.
+     * @param editorManager The FileEditorManagerEx instance used to retrieve editors.
      * @return The closest matching FileEditorWithTextEditors, or null if no matching editor is found.
      */
-    private fun getDiffEditor(manager: FileEditorManagerEx): FileEditorWithTextEditors? =
-        manager.currentFile?.let { file ->
-            manager.currentWindow                                      // Search in the current window's composites
-                ?.allComposites?.flatMap { it.allEditors.asSequence() }
+    private fun getDiffEditor(editorManager: FileEditorManagerEx): FileEditorWithTextEditors? =
+        editorManager.currentFile?.let { file ->
+            editorManager.currentWindow                            // Search in the current window's composites
+                ?.allComposites?.asSequence()?.flatMap { it.allEditors.asSequence() }
                 ?.filterIsInstance<FileEditorWithTextEditors>()
-                ?.firstOrNull { it.filesToRefresh.firstOrNull() == file }
-            ?: manager.allEditors                                      // Fallback to search in all editors managed by FileEditorManagerEx
+                ?.firstOrNull { it.filesToRefresh.contains(file) }
+            ?: editorManager.allEditors                            // Fallback to search in all editors managed by FileEditorManagerEx
                 .asSequence()
                 .filterIsInstance<FileEditorWithTextEditors>()
-                .firstOrNull { it.filesToRefresh.firstOrNull() == file }
+                .firstOrNull { it.filesToRefresh.contains(file) }
         }
 
     /**
      * Focuses the given diff editor and moves the caret to the specified line.
      *
-     * @param manager The FileEditorManagerEx instance used to manage file editors.
+     * @param editorManager The FileEditorManagerEx instance used to manage file editors.
      * @param editor The FileEditorWithTextEditors to focus.
      * @param line The line number to move the caret to.
      */
-    private fun focusDiffEditor(manager: FileEditorManagerEx, editor: FileEditorWithTextEditors, line: Int) =
+    private fun focusDiffEditor(editorManager: FileEditorManagerEx, editor: FileEditorWithTextEditors, line: Int) =
         editor.embeddedEditors.lastOrNull()?.apply {
-            manager.openFile(editor.file, true)                        // Focus tab
-            caretModel.removeSecondaryCarets()
-            caretModel.moveToLogicalPosition(LogicalPosition(line, 0)) // Switch the line number in the embedded editor
-            scrollingModel.scrollToCaret(ScrollType.CENTER)
-            selectionModel.removeSelection()
-            contentComponent.requestFocusInWindow()                    // Focus the embedded editor to show the caret
+            editorManager.openFile(editor.file, true) // Focus tab
+            DiffUtil.scrollEditor(this, line, false)  // Switch the line number in the embedded editor
+            contentComponent.requestFocusInWindow()   // Focus the embedded editor to show the caret
         }
 }
