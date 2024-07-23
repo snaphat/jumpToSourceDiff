@@ -1,18 +1,20 @@
 <!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
 <idea-plugin>
     <id>com.github.snaphat.jumptosourcediff</id>
-    <name>jumpToSourceDiff</name>
+    <name>Jump to Source/Diff</name>
     <vendor>snaphat</vendor>
 
     <depends>com.intellij.modules.platform</depends>
 
-    <resource-bundle>messages.MyBundle</resource-bundle>
-
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow factoryClass="com.github.snaphat.jumptosourcediff.toolWindow.MyToolWindowFactory" id="MyToolWindow"/>
+        <postStartupActivity implementation="com.github.snaphat.jumptosourcediff.PostStartupProjectActivity"/>
     </extensions>
 
     <applicationListeners>
-        <listener class="com.github.snaphat.jumptosourcediff.listeners.MyApplicationActivationListener" topic="com.intellij.openapi.application.ApplicationActivationListener"/>
+        <listener class="com.github.snaphat.jumptosourcediff.KeymapManagerListener" topic="com.intellij.openapi.keymap.KeymapManagerListener"/>
     </applicationListeners>
+
+    <actions>
+        <action id="JumpToSourceDiff" class="com.github.snaphat.jumptosourcediff.JumpToSourceDiffAction" text="Jump to Source/Diff" keymap="$default" use-shortcut-of="EditSource"/>
+    </actions>
 </idea-plugin>
