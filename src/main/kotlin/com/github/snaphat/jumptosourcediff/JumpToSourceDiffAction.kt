@@ -1,13 +1,13 @@
 package com.github.snaphat.jumptosourcediff
 
 import com.intellij.diff.actions.impl.OpenInEditorAction
-import com.intellij.diff.editor.DiffEditorViewerFileEditor
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorKind
 import com.intellij.openapi.editor.LogicalPosition
 import com.intellij.openapi.editor.ScrollType
+import com.intellij.openapi.fileEditor.FileEditorWithTextEditors
 import com.intellij.openapi.fileEditor.ex.FileEditorManagerEx
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vcs.actions.AbstractShowDiffAction
@@ -83,23 +83,23 @@ class JumpToSourceDiffAction : AbstractShowDiffAction()
     }
 
     /**
-     * Finds the closest DiffEditorViewerFileEditor that corresponds to the given source file.
+     * Finds the closest FileEditorWithTextEditors that corresponds to the given source file.
      *
      * This function searches within the currently active editor window first. If no matching editor is found,
      * it then searches through all editors managed by the FileEditorManagerEx.
      *
      * @param manager The FileEditorManagerEx instance used to retrieve editors.
-     * @return The closest matching DiffEditorViewerFileEditor, or null if no matching editor is found.
+     * @return The closest matching FileEditorWithTextEditors, or null if no matching editor is found.
      */
-    private fun getDiffEditor(manager: FileEditorManagerEx): DiffEditorViewerFileEditor? =
+    private fun getDiffEditor(manager: FileEditorManagerEx): FileEditorWithTextEditors? =
         manager.currentFile?.let { file ->
             manager.currentWindow                                      // Search in the current window's composites
                 ?.getComposites()?.flatMap { it.allEditors.asSequence() }
-                ?.filterIsInstance<DiffEditorViewerFileEditor>()
+                ?.filterIsInstance<FileEditorWithTextEditors>()
                 ?.firstOrNull { it.getFilesToRefresh().firstOrNull() == file }
             ?: manager.allEditors                                      // Fallback to search in all editors managed by FileEditorManagerEx
                 .asSequence()
-                .filterIsInstance<DiffEditorViewerFileEditor>()
+                .filterIsInstance<FileEditorWithTextEditors>()
                 .firstOrNull { it.getFilesToRefresh().firstOrNull() == file }
         }
 
@@ -107,10 +107,10 @@ class JumpToSourceDiffAction : AbstractShowDiffAction()
      * Focuses the given diff editor and moves the caret to the specified line.
      *
      * @param manager The FileEditorManagerEx instance used to manage file editors.
-     * @param editor The DiffEditorViewerFileEditor to focus.
+     * @param editor The FileEditorWithTextEditors to focus.
      * @param line The line number to move the caret to.
      */
-    private fun focusDiffEditor(manager: FileEditorManagerEx, editor: DiffEditorViewerFileEditor, line: Int) =
+    private fun focusDiffEditor(manager: FileEditorManagerEx, editor: FileEditorWithTextEditors, line: Int) =
         editor.embeddedEditors.lastOrNull()?.apply {
             manager.openFile(editor.file, true)                        // Focus tab
             caretModel.removeSecondaryCarets()
