@@ -7,9 +7,15 @@
 [![Downloads](https://img.shields.io/jetbrains/plugin/d/24929-jump-to-source-diff.svg)](https://plugins.jetbrains.com/plugin/24929-jump-to-source-diff)
 
 <!-- Plugin description -->
-Jump to Source/Diff adds an action to jump between open source and diff files seamlessly.
+Jump to Source/Diff adds an action to quickly switch between a selected source file editor and a corresponding diff view editor.
 
 By default, it uses the `Jump to Source` keyboard shortcut.
+
+## Features
+
+- **Seamless Switching:** Quickly switch between the editor of a source file and its diff view.
+- **Keyboard Shortcut:** Uses the default `Jump to Source` keyboard shortcut for easy access.
+- **Improved Workflow:** Enhances your development workflow by simplifying navigation between code changes and their sources.
 <!-- Plugin description end -->
 
 ## Installation
