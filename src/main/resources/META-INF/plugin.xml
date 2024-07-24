@@ -5,11 +5,6 @@
     <vendor>snaphat</vendor>
 
     <description><![CDATA[
-        <p>Jump to Source/Diff adds an action to jump between open source and diff files seamlessly. By default, it uses
-        the `Jump to Source` keyboard shortcut.</p>
-    ]]></description>
-
-    <description><![CDATA[
         <p>Jump to Source/Diff adds an action to jump between open source and diff files seamlessly.</p>
         <br/>
         <p>By default, it uses the `Jump to Source` keyboard shortcut.</p>
