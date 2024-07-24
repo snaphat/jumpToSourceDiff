@@ -1,4 +1,4 @@
-# jumpToSourceDiff
+# Jump To Source/Diff
 
 ![Build](https://github.com/snaphat/jumpToSourceDiff/workflows/Build/badge.svg)
 [![Version](https://img.shields.io/jetbrains/plugin/v/24929-jump-to-source-diff.svg)](https://plugins.jetbrains.com/plugin/24929-jump-to-source-diff)
@@ -28,14 +28,14 @@ To keep everything working, do not remove `<!-- ... -->` sections.
 
 - Using the IDE built-in plugin system:
   
-  <kbd>Settings/Preferences</kbd> > <kbd>Plugins</kbd> > <kbd>Marketplace</kbd> > <kbd>Search for "jumpToSourceDiff"</kbd> >
+  <kbd>Settings/Preferences</kbd> > <kbd>Plugins</kbd> > <kbd>Marketplace</kbd> > <kbd>Search for "Jump to Source/Diff"</kbd> >
   <kbd>Install</kbd>
   
 - Using JetBrains Marketplace:
 
-  Go to [JetBrains Marketplace](https://plugins.jetbrains.com/plugin/MARKETPLACE_ID) and install it by clicking the <kbd>Install to ...</kbd> button in case your IDE is running.
+  Go to [JetBrains Marketplace](https://plugins.jetbrains.com/plugin/24929-jump-to-source-diff) and install it by clicking the <kbd>Install to ...</kbd> button in case your IDE is running.
 
-  You can also download the [latest release](https://plugins.jetbrains.com/plugin/MARKETPLACE_ID/versions) from JetBrains Marketplace and install it manually using
+  You can also download the [latest release](https://plugins.jetbrains.com/plugin/24929-jump-to-source-diff/versions) from JetBrains Marketplace and install it manually using
   <kbd>Settings/Preferences</kbd> > <kbd>Plugins</kbd> > <kbd>⚙️</kbd> > <kbd>Install plugin from disk...</kbd>
 
 - Manually:
