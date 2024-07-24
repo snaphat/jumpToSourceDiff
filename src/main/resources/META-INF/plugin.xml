@@ -4,6 +4,17 @@
     <name>Jump to Source/Diff</name>
     <vendor>snaphat</vendor>
 
+    <description><![CDATA[
+        <p>Jump to Source/Diff adds an action to jump between open source and diff files seamlessly. By default, it uses
+        the `Jump to Source` keyboard shortcut.</p>
+    ]]></description>
+
+    <description><![CDATA[
+        <p>Jump to Source/Diff adds an action to jump between open source and diff files seamlessly.</p>
+        <br/>
+        <p>By default, it uses the `Jump to Source` keyboard shortcut.</p>
+    ]]></description>
+
     <depends>com.intellij.modules.platform</depends>
 
     <extensions defaultExtensionNs="com.intellij">
@@ -11,10 +22,12 @@
     </extensions>
 
     <applicationListeners>
-        <listener class="com.github.snaphat.jumptosourcediff.KeymapManagerListener" topic="com.intellij.openapi.keymap.KeymapManagerListener"/>
+        <listener class="com.github.snaphat.jumptosourcediff.KeymapManagerListener"
+                  topic="com.intellij.openapi.keymap.KeymapManagerListener"/>
     </applicationListeners>
 
     <actions>
-        <action id="JumpToSourceDiff" class="com.github.snaphat.jumptosourcediff.JumpToSourceDiffAction" text="Jump to Source/Diff" keymap="$default" use-shortcut-of="EditSource"/>
+        <action id="JumpToSourceDiff" class="com.github.snaphat.jumptosourcediff.JumpToSourceDiffAction"
+                text="Jump to Source/Diff" keymap="$default" use-shortcut-of="EditSource"/>
     </actions>
 </idea-plugin>
