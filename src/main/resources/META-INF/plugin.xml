@@ -4,12 +4,6 @@
     <name>Jump to Source/Diff</name>
     <vendor>snaphat</vendor>
 
-    <description><![CDATA[
-        <p>Jump to Source/Diff adds an action to jump between open source and diff files seamlessly.</p>
-        <br/>
-        <p>By default, it uses the `Jump to Source` keyboard shortcut.</p>
-    ]]></description>
-
     <depends>com.intellij.modules.platform</depends>
 
     <extensions defaultExtensionNs="com.intellij">
