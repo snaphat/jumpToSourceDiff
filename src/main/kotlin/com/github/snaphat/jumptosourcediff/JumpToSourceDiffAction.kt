@@ -1,95 +1,75 @@
 package com.github.snaphat.jumptosourcediff
 
-import com.intellij.diff.actions.impl.OpenInEditorAction
 import com.intellij.diff.util.DiffUtil
+import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.CommonDataKeys
-import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorKind
 import com.intellij.openapi.fileEditor.FileEditorWithTextEditors
 import com.intellij.openapi.fileEditor.ex.FileEditorManagerEx
-import com.intellij.openapi.project.Project
-import com.intellij.openapi.vcs.actions.AbstractShowDiffAction
-import com.intellij.openapi.vcs.actions.DiffActionExecutor
-import com.intellij.openapi.vcs.actions.DiffActionExecutor.CompareToCurrentExecutor
-import com.intellij.openapi.vcs.diff.DiffProvider
-import com.intellij.openapi.vfs.VirtualFile
+
 /**
  * An [AnAction] to jump between source and diff editors.
  */
-class JumpToSourceDiffAction : AbstractShowDiffAction()
+class JumpToSourceDiffAction : AnAction()
 {
-    /**
-     Inherited to avoid [org.jetbrains.annotations.ApiStatus.OverrideOnly] warnings for [OpenInEditorAction.update]
-     **/
-    private val openInEditorAction = object : OpenInEditorAction()
-    {}
+    // Retrieves the built-in 'Edit Source' action (typically opens the editor at a selected element)
+    private val editSourceAction: AnAction? =
+        ActionManager.getInstance().getAction("EditSource")
+
+    // Retrieves the built-in 'Compare with the Same Version' action (used in VCS changes)
+    private val compareSameVersionAction: AnAction? =
+        ActionManager.getInstance().getAction("Compare.SameVersion")
 
     /**
      * Handles the action performed event.
      *
      * This method switches between source/diff editors depending on the active editor type:
-     * - main navigates to the closest matching diff editor. If none, acts as [AbstractShowDiffAction]`.
-     * - diff acts as [OpenInEditorAction], the action executed by the 'Jump to Source' toolbar button.
-     * - others act as [AbstractShowDiffAction].
+     * - main navigates to the closest matching diff editor. If none, acts as [compareSameVersionAction]`.
+     * - diff acts as [editSourceAction], the action executed by the 'Jump to Source' toolbar button.
+     * - others act as [compareSameVersionAction].
      *
      * @param e The [AnActionEvent] containing information about the action event.
      */
-
     override fun actionPerformed(e: AnActionEvent)
     {
         // Get the file editor manager for the current project, current line in the editor, and type of editor
         val editorManager = e.project?.let { FileEditorManagerEx.getInstanceEx(it) } ?: return
-        val line          = e.getData(CommonDataKeys.CARET)?.caretModel?.logicalPosition?.line ?: return
-        val editorKind    = e.getData(CommonDataKeys.EDITOR)?.editorKind ?: return
+        val line = e.getData(CommonDataKeys.CARET)?.caretModel?.logicalPosition?.line ?: return
+        val editorKind = e.getData(CommonDataKeys.EDITOR)?.editorKind ?: return
 
         when (editorKind)
         {
             EditorKind.MAIN_EDITOR -> getDiffEditor(editorManager)?.let { focusDiffEditor(editorManager, it, line) }
-                                      ?: super.actionPerformed(e)
-            EditorKind.DIFF        -> openInEditorAction.actionPerformed(e)
-            else                   -> super.actionPerformed(e)
+                                      ?: compareSameVersionAction?.actionPerformed(e)
+            EditorKind.DIFF        -> editSourceAction?.actionPerformed(e)
+            else                   -> compareSameVersionAction?.actionPerformed(e)
         }
     }
-
-    /**
-     * Provides the executor for performing a diff action.
-     *
-     * This method returns a [DiffActionExecutor] for the given parameters.
-     * It acts as [CompareToCurrentExecutor] when performing a diff action.
-     *
-     * @param diffProvider The DiffProvider used to obtain differences.
-     * @param selectedFile The VirtualFile to be compared.
-     * @param project The Project within which the action is performed.
-     * @param editor The Editor in which the action is invoked, or null if no editor is associated.
-     * @return A DiffActionExecutor for performing the diff action.
-     */
-    override fun getExecutor(diffProvider: DiffProvider,
-                             selectedFile: VirtualFile,
-                             project: Project,
-                             editor: Editor?): DiffActionExecutor =
-        CompareToCurrentExecutor(diffProvider, selectedFile, project, editor)
 
     /**
      * Updates the presentation of the action.
      *
-     * This method is called to update the state of the action depending on the active editor type:
-     * - main acts as [AbstractShowDiffAction].
-     * - diff acts as [OpenInEditorAction], the action executed by the 'Jump to Source' toolbar button.
-     * - others act as [AbstractShowDiffAction].
+     * This method enables and makes the action visible when it is not invoked from an action toolbar.
      * @param e The AnActionEvent containing information about the invocation place and data context.
      */
-    override fun update(e: AnActionEvent)
-    {
-        val editorKind = e.getData(CommonDataKeys.EDITOR)?.editorKind ?: return // Get the type of editor
-        when (editorKind)
-        {
-            EditorKind.MAIN_EDITOR -> super.update(e)
-            EditorKind.DIFF        -> openInEditorAction.update(e)
-            else                   -> super.update(e)
-        }
-    }
+    override fun update(e: AnActionEvent) =
+        e.presentation.run { isEnabledAndVisible = !e.isFromActionToolbar }
+
+
+    /**
+     * Specifies the thread on which the [update] method should be executed.
+     *
+     * This method returns [ActionUpdateThread.BGT], indicating that the update logic
+     * can safely run on a background thread. Use this when the update code does not touch UI
+     * components or PSI structures.
+     *
+     * @return [ActionUpdateThread.BGT] to perform updates off the UI thread.
+     */
+    override fun getActionUpdateThread(): ActionUpdateThread =
+        ActionUpdateThread.BGT
 
     /**
      * Finds the closest diff editor that corresponds to the given source file.
