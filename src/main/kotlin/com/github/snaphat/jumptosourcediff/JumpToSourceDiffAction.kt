@@ -2,10 +2,12 @@ package com.github.snaphat.jumptosourcediff
 
 import com.intellij.diff.util.DiffUtil
 import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.ActionPromoter
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.CommonDataKeys
+import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.editor.EditorKind
 import com.intellij.openapi.fileEditor.FileEditorWithTextEditors
 import com.intellij.openapi.fileEditor.ex.FileEditorManagerEx
@@ -13,15 +15,59 @@ import com.intellij.openapi.fileEditor.ex.FileEditorManagerEx
 /**
  * An [AnAction] to jump between source and diff editors.
  */
-class JumpToSourceDiffAction : AnAction()
+class JumpToSourceDiffAction : AnAction(), ActionPromoter
 {
     // Retrieves the built-in 'Edit Source' action (typically opens the editor at a selected element)
-    private val editSourceAction: AnAction? =
-        ActionManager.getInstance().getAction("EditSource")
+    private val editSourceAction: AnAction? = ActionManager.getInstance().getAction("EditSource")
 
     // Retrieves the built-in 'Compare with the Same Version' action (used in VCS changes)
-    private val compareSameVersionAction: AnAction? =
-        ActionManager.getInstance().getAction("Compare.SameVersion")
+    private val compareSameVersionAction: AnAction? = ActionManager.getInstance().getAction("Compare.SameVersion")
+
+    /**
+     * Promotes [JumpToSourceDiffAction] above `EditSource`-related actions to ensure correct shortcut handling.
+     *
+     * This method is invoked during action resolution when a shortcut is pressed. It adjusts the order of available
+     * actions so that [JumpToSourceDiffAction] takes precedence over other actions using the same shortcut.
+     *
+     * This is necessary because platform actions like `Frontend.EditSource` (introduced in Rider 2025.1 —
+     * see [action registration](https://github.com/JetBrains/intellij-community/blob/abbd981/platform/vcs-impl/frontend/resources/intellij.platform.vcs.impl.frontend.xml#L53))
+     * and `RiderEditSource` (in earlier Rider versions) are registered earlier in the action list and are
+     * selected first during shortcut resolution, preventing our action from being invoked. Our action intentionally
+     * reuses the `EditSource` shortcut, which is also used by these platform `EditSource`-related actions, making
+     * it necessary to dynamically promote ours in the resolved action list to ensure it is invoked.
+     *
+     * This adjustment is performed using the [ActionPromoter] extension point rather than modifying keymap bindings.
+     * Programmatic keymap modifications are avoided because they can unintentionally alter user configurations, are
+     * fragile across IDE versions, and can cause issues during IDE startup. In particular, during the IDE's first load,
+     * [com.intellij.openapi.keymap.KeymapManagerListener.activeKeymapChanged] is fired while
+     * [com.intellij.openapi.keymap.KeymapManager] is still initializing; accessing keymap data at that point triggers
+     * recursive initialization, resulting in an infinite loop (see [IJPL-5324](https://youtrack.jetbrains.com/issue/IJPL-5324)).
+     *
+     * By reordering actions at runtime through [ActionPromoter], we avoid these pitfalls while ensuring correct
+     * shortcut behavior in both existing and future IDE builds, even as additional `EditSource`-related actions are
+     * introduced or renamed.
+     *
+     * @param actions The list of available actions in the given [context].
+     * @param context The current data context, used to determine the editor kind.
+     * @return A reordered list with [JumpToSourceDiffAction] promoted, or the original list if no changes are needed.
+     */
+    override fun promote(actions: List<AnAction>, context: DataContext): List<AnAction>
+    {
+        when (context.getData(CommonDataKeys.EDITOR)?.editorKind)
+        {
+            EditorKind.MAIN_EDITOR, EditorKind.DIFF -> Unit
+            else                                    -> return actions
+        }
+
+        val thisActionIndex = actions.indexOfFirst { it is JumpToSourceDiffAction }.takeIf { it >= 0 } ?: return actions
+        val editSourceIndex = actions.indexOf(editSourceAction).takeIf { it >= 0 } ?: return actions
+        if (thisActionIndex < editSourceIndex) return actions
+
+        return actions.toMutableList().apply {
+            val jumpToSourceDiffAction = removeAt(thisActionIndex)
+            add(editSourceIndex, jumpToSourceDiffAction)
+        }
+    }
 
     /**
      * Handles the action performed event.
@@ -55,8 +101,7 @@ class JumpToSourceDiffAction : AnAction()
      * This method enables and makes the action visible when it is not invoked from an action toolbar.
      * @param e The AnActionEvent containing information about the invocation place and data context.
      */
-    override fun update(e: AnActionEvent) =
-        e.presentation.run { isEnabledAndVisible = !e.isFromActionToolbar }
+    override fun update(e: AnActionEvent) = e.presentation.run { isEnabledAndVisible = !e.isFromActionToolbar }
 
 
     /**
@@ -68,8 +113,7 @@ class JumpToSourceDiffAction : AnAction()
      *
      * @return [ActionUpdateThread.BGT] to perform updates off the UI thread.
      */
-    override fun getActionUpdateThread(): ActionUpdateThread =
-        ActionUpdateThread.BGT
+    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 
     /**
      * Finds the closest diff editor that corresponds to the given source file.
@@ -84,11 +128,9 @@ class JumpToSourceDiffAction : AnAction()
         editorManager.currentFile?.let { file ->
             editorManager.currentWindow // Search in the current window's composites
                 ?.allComposites?.asSequence()?.flatMap { it.allEditors.asSequence() }
-                ?.filterIsInstance<FileEditorWithTextEditors>()
-                ?.firstOrNull { it.filesToRefresh.contains(file) }
+                ?.filterIsInstance<FileEditorWithTextEditors>()?.firstOrNull { it.filesToRefresh.contains(file) }
             ?: editorManager.allEditors // Fallback to search in all editors
-                .asSequence()
-                .filterIsInstance<FileEditorWithTextEditors>()
+                .asSequence().filterIsInstance<FileEditorWithTextEditors>()
                 .firstOrNull { it.filesToRefresh.contains(file) }
         }
 

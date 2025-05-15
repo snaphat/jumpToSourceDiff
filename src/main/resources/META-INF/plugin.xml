@@ -7,13 +7,8 @@
     <depends>com.intellij.modules.platform</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <postStartupActivity implementation="com.github.snaphat.jumptosourcediff.PostStartupProjectActivity"/>
+        <actionPromoter implementation="com.github.snaphat.jumptosourcediff.JumpToSourceDiffAction"/>
     </extensions>
-
-    <applicationListeners>
-        <listener class="com.github.snaphat.jumptosourcediff.KeymapManagerListener"
-                  topic="com.intellij.openapi.keymap.KeymapManagerListener"/>
-    </applicationListeners>
 
     <actions>
         <action id="JumpToSourceDiff" class="com.github.snaphat.jumptosourcediff.JumpToSourceDiffAction"
