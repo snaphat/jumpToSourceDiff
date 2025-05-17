@@ -47,6 +47,12 @@ class JumpToSourceDiffAction : AnAction(), ActionPromoter
      * shortcut behavior in both existing and future IDE builds, even as additional `EditSource`-related actions are
      * introduced or renamed.
      *
+     * Additionally, this method handles the case where the plugin is enabled dynamically after IDE startup. In such
+     * cases, even though the shortcut may be registered correctly, the platform may not include
+     * [JumpToSourceDiffAction] in the resolved action list. This prevents it from being triggered. To address this, the
+     * method inserts the current action instance directly before the `EditSource` action if it is not already present
+     * in the list, ensuring it participates in resolution and the shortcut remains functional.
+     *
      * @param actions The list of available actions in the given [context].
      * @param context The current data context, used to determine the editor kind.
      * @return A reordered list with [JumpToSourceDiffAction] promoted, or the original list if no changes are needed.
@@ -59,13 +65,16 @@ class JumpToSourceDiffAction : AnAction(), ActionPromoter
             else                                    -> return actions
         }
 
-        val thisActionIndex = actions.indexOfFirst { it is JumpToSourceDiffAction }.takeIf { it >= 0 } ?: return actions
         val editSourceIndex = actions.indexOf(editSourceAction).takeIf { it >= 0 } ?: return actions
-        if (thisActionIndex < editSourceIndex) return actions
+        val thisActionIndex = actions.indexOfFirst { it is JumpToSourceDiffAction }
 
         return actions.toMutableList().apply {
-            val jumpToSourceDiffAction = removeAt(thisActionIndex)
-            add(editSourceIndex, jumpToSourceDiffAction)
+            when
+            {
+                thisActionIndex < 0               -> add(editSourceIndex, this@JumpToSourceDiffAction)
+                thisActionIndex < editSourceIndex -> return actions
+                else                              -> add(editSourceIndex, removeAt(thisActionIndex))
+            }
         }
     }
 
