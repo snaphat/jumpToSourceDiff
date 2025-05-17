@@ -1,5 +1,6 @@
 package com.github.snaphat.jumptosourcediff
 
+import com.intellij.diff.actions.impl.OpenInEditorAction
 import com.intellij.diff.util.DiffUtil
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionPromoter
@@ -19,6 +20,9 @@ class JumpToSourceDiffAction : AnAction(), ActionPromoter
 {
     // Retrieves the built-in 'Edit Source' action (typically opens the editor at a selected element)
     private val editSourceAction: AnAction? = ActionManager.getInstance().getAction("EditSource")
+
+    // Action used in the diff editor to return to the source view
+    private val openInEditorAction: AnAction? = OpenInEditorAction()
 
     // Retrieves the built-in 'Compare with the Same Version' action (used in VCS changes)
     private val compareSameVersionAction: AnAction? = ActionManager.getInstance().getAction("Compare.SameVersion")
@@ -99,7 +103,7 @@ class JumpToSourceDiffAction : AnAction(), ActionPromoter
         {
             EditorKind.MAIN_EDITOR -> getDiffEditor(editorManager)?.let { focusDiffEditor(editorManager, it, line) }
                                       ?: compareSameVersionAction?.actionPerformed(e)
-            EditorKind.DIFF        -> editSourceAction?.actionPerformed(e)
+            EditorKind.DIFF        -> openInEditorAction?.actionPerformed(e)
             else                   -> compareSameVersionAction?.actionPerformed(e)
         }
     }
